@@ -1,0 +1,120 @@
+---
+title: "read_data_from_web"
+author: "Risa Dickerman"
+date: "2026-10-15"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(httr)
+```
+
+##Import NSDUH
+
+```{r }
+url = "https://www.samhsa.gov/data/sites/default/files/NSDUHsaeShortTermCHG2015/NSDUHsaeShortTermCHG2015.htm"
+
+drug_use_html = 
+  read_html(url)
+```
+
+Pull the tables out
+
+```{r}
+maj_df = 
+  drug_use_html |> 
+  html_table() |> 
+  first() |> 
+  slice(-1)
+
+maj_df
+```
+table pulls out each object that looks like a table [[n]] = number of table pulled out.
+slice() - if you want to specifically eliminate a 
+filter() - usually you want filter bu
+
+
+##Import of SW data
+
+pull in the html
+
+```{r}
+swm_html = 
+  read_html_live("https://www.imdb.com/list/ls070150896/")
+```
+read html - pulls html
+read_html_live - built on r package that uses chrome in the background. Might or might not work
+
+selector gadget
+
+```{r}
+swml_title_vec =
+  swm_html |>  
+  html_elements(".ipc-title-link-wrapper .ipc-title__text") |> 
+  html_text()
+
+swm_metascore_vec =
+  swm_html |>
+  html_elements(".metacritic-score-box") |>
+  html_text()
+
+runtime_vec = 
+  swm_html |>
+  html_elements(".base .ipc-inline-list__item:nth-child(2)") |>
+  html_text()
+
+
+swm_df =
+  tibble(
+    title = swm_title_vec,
+    score = swm_metascore_vec,
+    runtime = swm_runtime_vec
+  )
+  
+```
+
+## Use APIs
+
+getting a csv
+
+```{r}
+nyc_water_df =
+  GET(https://data.cityofnewyork.us/api/v3/views/ia2d-e54m/query.csv) |> 
+    content("parsed") |> 
+  select(year:per_capita_gallons_per)
+```
+api endpoint - when ask data from this thing gets to the write server
+Try to minimize the times you scrape data
+
+
+Getting a json file instead
+```{r}
+nyc_water_json =
+  GET("https://data.cityofnewyork.us/api/v3/views/ia2d-e54m/query.json")
+
+nyc_water_json |> 
+  content("text") |> 
+  jsonlite::fromJSON() |> 
+  as_tibble() |> 
+  select(year:per_capita_gallons)
+
+head(nyc_water_json)
+```
+
+Look at some pokemon!
+```{r}
+pokemon =
+  GET("https://pokeapi.co/api/v2/pokemon/1")
+
+pokemon_data =
+  pokemon_json |> 
+  content()
+
+pokemon_data[["name"]]
+pokemon_data[["height"]]
+pokemon_data[["abilities"]]
+```
+pulling in all of that information and makes it somewhat trickier. If you want to use API to get more complicated, it will in fact be more complicated
